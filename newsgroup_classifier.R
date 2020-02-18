@@ -110,14 +110,14 @@ train_2cl <- train_posts %>%
   mutate(newsgroup = factor(newsgroup, # transform newsgroup into a factor w/ shorter labels
                             levels = selected_ngs,
                             labels = selected_lbls))
-View(head(train_2cl, 10))
+summary(train_2cl)
 
 test_2cl <- test_posts %>%
   filter(newsgroup %in% selected_ngs) %>%
   mutate(newsgroup = factor(newsgroup, 
                             levels = selected_ngs,
                             labels = selected_lbls))
-View(head(test_2cl, 10))
+summary(test_2cl)
 
 # We will now use the training set to build a classifier.
 # Test set will be used later, only for evaluation purposes.
@@ -224,16 +224,17 @@ train_tokens[[15]]
 # communication channels (e.g. chat, status posts), tend to have misspelled 
 # words, it might be useful to do spelling correction, as a part of the text 
 # normalization step. A typical approach is to check the text against some of 
-# the available misspelling corpora 
-# (e.g. http://www.dcs.bbk.ac.uk/~ROGER/corpora.html).
+# the available misspelling corpora - see this example:
+# https://cran.r-project.org/web/packages/fuzzyjoin/vignettes/stringdist_join.html
 # There is also an R package - spelling - for spell checking:
-# https://cran.r-project.org/web/packages/spelling/index.html
+# https://github.com/ropensci/spelling
 # We will skip this step for now.
 
 
 # Next, we will remove stopwords.
 # To that end, we will use quanteda's default stopwords list for English.
-?stopwords
+# https://github.com/quanteda/stopwords
+
 # It is advised to inspect the default stopword list before
 # applying it to the problem at hand - the default one may not be suitable
 # for the task at hand (e.g. for sentiment / emotion detection personal  
@@ -243,12 +244,9 @@ tail(stopwords(), n = 50)
 train_tokens <- tokens_remove(train_tokens, stopwords())
 train_tokens[[15]]
 
-## A few notes: 
-## -  quanteda uses stopwords R package as the source for stopwords lists:
-##    https://github.com/quanteda/stopwords
-## -  depending on the task at hand, you might want to extend the built-in
-##    stopword list with additional, corpus specific 'stopwords'
-##    (e.g. overly frequent words in the given corpus).
+# Note: depending on the task at hand, you might want to extend the 
+# built-in stopword list with additional, corpus specific 'stopwords'
+# (e.g. overly frequent words in the given corpus).
 
 
 # Perform stemming on the tokens
@@ -287,7 +285,7 @@ View(as.matrix(train_dfm)[1:20,1:20])
 ####################
 
 # We will use the Chi2 test of independence to do feature selection.
-# The null hypothesis of the test is that the occurrence of a term 
+# The null hypothesis (H0) of the test is that the occurrence of a term 
 # and the occurrence of a class label are independent; so, if a test
 # proves to be significant, we reject the null hypothesis and 
 # consider some dependence between the term and the class label.
@@ -422,6 +420,9 @@ m1_best_results
 ##    (to continue with the example, specificity would be the proportion of students who 
 ##    failed the exam and were correctly predicted to fail, among all the students who
 ##    really failed) 
+
+## Nice explanation of Sensitivity, Specificity, ROC curves and AUC:
+## https://towardsdatascience.com/understanding-auc-roc-curve-68b2303cc9c5
 
 ## Note that in this example we do not have 'true' positive and negative classes,
 ## that is, no preference for better predicting one class ('guns') over the other 
