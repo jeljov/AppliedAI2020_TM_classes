@@ -556,11 +556,6 @@ str(svd_res)
 # v - its columns are referred to as right singular vectors of the original matrix; it respresents 
 #     the relation between the extracted dimensions (columns) and the documents (rows)
 
-# Store these vectors and matrices so that the computation 
-# does not have to be repeated
-saveRDS(svd_res$d, "models/svd/sigma.RData")
-saveRDS(svd_res$u, "models/svd/left_sv.RData")
-saveRDS(svd_res$v, "models/svd/right_sv.RData")
 
 # Take a glimpse at the new feature set (the right singular vector):
 View(svd_res$v[1:20,1:50])
@@ -607,7 +602,7 @@ param_Grid <- expand.grid( .mtry = seq(from = 1, to = n_features, length.out = 1
 # In addition, we are asking RF to build 1000 trees. Lastly, when the best values 
 # for the parameters are chosen, caret will use them to build the final model using 
 # all the training data. So, the number of trees we're building is:
-# (5 * 20 * 1000) + 1000 = 1,001,000 trees!
+# (5 * 20 * 1000) + 1000 = 101,000 trees!
 
 # Build a RF classifier
 rf_cv_1 <- cross_validate_classifier(seed, 
@@ -617,12 +612,6 @@ rf_cv_1 <- cross_validate_classifier(seed,
                                      grid_spec = param_Grid)
 
 # (n.b. the above f. call takes about an hour to execute)
-
-# Save the model to have a quick access to it later
-# saveRDS(rf_cv_1, "models/rf_cv_1.RData")
-
-# Load the saved model
-# rf_cv_1 <- readRDS("models/rf_cv_1.RData")
 
 # Check out the results
 rf_cv_1
@@ -718,6 +707,8 @@ setdiff(featnames(test_dfm), featnames(train_dfm_2))
 setdiff(featnames(train_dfm_2), featnames(test_dfm))
 # No difference -> they are exactly the same.
 
+View(test_dfm[1:20, 1:20])
+
 # The next step is to 'project' the test DTM into the same 
 # TF-IDF vector space we built for our training data. 
 # This requires the following steps:
@@ -770,8 +761,8 @@ dim(test_tfidf)
 example_doc <- as.matrix(train_dfm_2)[1,]
 
 # For convenience, we'll introduce:
-sigma_inverse <- 1 / svd_res$d # 1 / readRDS("models/svd/sigma.Rdata") 
-u_transpose <- t(svd_res$u) # readRDS("models/svd/left_sv.Rdata") %>% t() 
+sigma_inverse <- 1 / svd_res$d 
+u_transpose <- t(svd_res$u) 
 
 # The projection of the example document in the SVD space, based on the 
 # above given formula:
@@ -783,13 +774,11 @@ example_doc_hat <- as.vector(sigma_inverse * u_transpose %*% example_doc)
 example_doc_hat[1:10]
 # ... and the corresponding row in the document space produced by SVD (the V matrix)
 svd_res$v[1, 1:10]
-# v <- readRDS("models/svd/right_sv.Rdata")
-# v[1,1:10]
 # The two vectors are almost identical (note the values are expressed in e-04, e-05,...).
 # In fact, the differences are so tiny that when we compute cosine similarity 
 # between the two vectors, the similarity turns to be equal to 1:
 library(lsa)
-cosine(example_doc_hat, svd_res$v[1,]) # v[1,]
+cosine(example_doc_hat, svd_res$v[1,])
 #
 # Why is this useful?
 # It shows that using the above given formula, we can transform any document into
@@ -818,7 +807,6 @@ test_svd_df <- data.frame(Label = test_2cl$newsgroup,
 
 # Now we can make predictions on the test data set 
 # using our best classifer (rf_cv_1)
-# rf_cv_1 <- readRDS("models/rf_cv_1.Rdata")
 preds <- predict(rf_cv_1, newdata = test_svd_df)
 
 # Examine the results
